@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f8f7">
+  <title>{% block title %}MEDDECK{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..700;1,9..40,400..700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='gene-graph.css') }}">
+  <script src="{{ url_for('static', filename='meddeck-graph.js') }}"></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="{{ url_for('home') }}" aria-label="MEDDECK home"><span class="brand-mark">M</span> MEDDECK</a>
+    <nav aria-label="Main navigation">
+      <a href="{{ url_for('atlas') }}">Atlas</a>
+      <a href="{{ url_for('sources') }}">Sources</a>
+      {% if current_user %}
+        <a href="{{ url_for('dashboard') }}">My Space</a>
+        <a href="{{ url_for('gene_graph') }}">Gene Graph</a>
+        <a href="{{ url_for('profile') }}">My Profile</a>
+        <form class="nav-form" method="post" action="{{ url_for('logout') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <button class="text-button" type="submit">Sign out</button>
+        </form>
+      {% else %}
+        <a href="{{ url_for('login') }}">Sign in</a>
+        <a class="nav-join" href="{{ url_for('register') }}">Create account</a>
+      {% endif %}
+    </nav>
+  </header>
+  <main class="page">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-stack" role="status">
+          {% for category, message in messages %}<p class="flash {{ category }}">{{ message }}</p>{% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+  <footer class="footer">
+    <span>MEDDECK · Science that connects, explained with care.</span>
+    <span>Does not provide diagnoses or replace medical care.</span>
+  </footer>
+  <script>
+    const role = document.querySelector("#role");
+    const patientFields = document.querySelector("#patient-fields");
+    const diagnosis = document.querySelector("#diagnosed");
+    function updateForm() {
+      if (!role) return;
+      const patient = role.value === "patient";
+      if (patientFields) patientFields.hidden = !patient;
+      const symptoms = document.querySelector('textarea[name="symptoms"]');
+      if (symptoms) symptoms.required = patient;
+      const diagnosisQuestion = document.querySelector("#diagnosis-question");
+      if (diagnosisQuestion) diagnosisQuestion.hidden = !patient;
+      const conditionField = document.querySelector("#condition-field");
+      const conditionInput = document.querySelector('input[name="condition"]');
+      const diagnosed = diagnosis && diagnosis.value === "yes";
+      if (conditionField) conditionField.hidden = !role.value || (patient && !diagnosed);
+      if (conditionInput) conditionInput.required = !patient || diagnosed;
+      const conditionTitle = document.querySelector("#condition-title");
+      if (conditionTitle) conditionTitle.textContent = patient ? "Diagnosed condition" : "Disease of interest";
+    }
+    role?.addEventListener("change", updateForm);
+    diagnosis?.addEventListener("change", updateForm);
+    updateForm();
+  </script>
+</body>
+</html>
